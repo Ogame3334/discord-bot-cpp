@@ -1,0 +1,4 @@
+build/
+docker/
+*compose.yaml
+execute.sh

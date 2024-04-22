@@ -1,0 +1,18 @@
+cmake_minimum_required(VERSION 3.14)
+enable_language(CXX)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
+project(ogame-notify)
+
+set(proj_src main.cpp)
+
+message("The sources to compile are these:")
+message(${proj_src})
+
+
+add_executable(${PROJECT_NAME} ${proj_src})
+target_link_libraries(${PROJECT_NAME} PRIVATE dpp)
+
+set(CMAKE_VERBOSE_MAKEFILE OFF)
