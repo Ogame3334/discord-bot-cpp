@@ -2,3 +2,4 @@ build/
 docker/
 *compose.yaml
 execute.sh
+token.hpp
