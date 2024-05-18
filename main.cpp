@@ -86,11 +86,11 @@ int main() {
         }
     });
 
-    std::cout << ogm::datetime::GetHour() << std::endl;
+    // std::cout << ogm::datetime::GetHour() << std::endl;
 
-    auto temp = ogm::json::ReadJson("gasoline.json");
-    temp[temp.size()] = 100000;
-    ogm::json::WriteJson("test.json", temp);
+    // auto temp = ogm::json::ReadJson("gasoline.json");
+    // temp[temp.size()] = 100000;
+    // ogm::json::WriteJson("test.json", temp);
 
     bot.start(true);
 
@@ -100,7 +100,7 @@ int main() {
         if(preHour != nowHour){
             preHour = nowHour;
             if(nowHour == "00" or nowHour == "08" or nowHour == "20"){
-                std::cout << "日付が変わったよっ！！！！" << std::endl;
+                // std::cout << "日付が変わったよっ！！！！" << std::endl;
                 ogm::bot_move::NotifyTask(bot);
             }
         }
