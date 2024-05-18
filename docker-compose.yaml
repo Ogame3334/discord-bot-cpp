@@ -1,0 +1,8 @@
+version: "3.9"
+services:
+  ogame-notify:
+    image: dpp:latest
+    command: /root/ogame-notify/execute.sh
+    container_name: ogame-notify-discord
+    volumes:
+      - .:/root/ogame-notify
