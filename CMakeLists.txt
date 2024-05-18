@@ -14,5 +14,6 @@ message(${proj_src})
 
 add_executable(${PROJECT_NAME} ${proj_src})
 target_link_libraries(${PROJECT_NAME} PRIVATE dpp)
+target_link_libraries(${PROJECT_NAME} PRIVATE jsoncpp)
 
 set(CMAKE_VERBOSE_MAKEFILE OFF)

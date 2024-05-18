@@ -1,48 +1,57 @@
 #include <dpp/dpp.h>
 #include "inc/token.hpp"
 #include <unistd.h>
-#include <boost/asio.hpp>
 #include <chrono>
 #include <sstream>
+#include <vector>
+#include <jsoncpp/json/json.h>
+#include <fstream>
+#include "inc/jsonutil.hpp"
+#include "inc/datetimeutil.hpp"
 
-namespace channel_id
-{
-    const dpp::snowflake TODO_CHANNEL_ID = 1227881613787140097;
-    const dpp::snowflake NOTIFY_CHANNEL_ID = 1231795852796887050;
-}
 
 namespace ogm
 {
-    std::time_t GetNow(){
-        std::chrono::system_clock::time_point p = std::chrono::system_clock::now();
-        return std::chrono::system_clock::to_time_t(p);
-    }
-    std::string GetToday(){
-        auto now = std::chrono::system_clock::now();
-        std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
-        std::tm now_tm = *std::localtime(&now_time_t);
-        std::ostringstream oss;
-        oss << std::put_time(&now_tm, "%Y-%m-%d");
-        return oss.str();
-    }
+namespace id
+{
+    const dpp::snowflake TODO_CHANNEL_ID = 1227881613787140097;
+    const dpp::snowflake NOTIFY_CHANNEL_ID = 1231795852796887050;
+    const dpp::snowflake OGAME_ID = 239344934262538240;
+}
 namespace bot_move
 {
-    void NotifyTask(){
-        bot.messages_get(1227881613787140097, 0, 0, 0, 20, [](const dpp::confirmation_callback_t& callback){
-        for(auto& hoge : callback.get<dpp::message_map>()){
-            std::cout << hoge.first << ": " << hoge.second.content << std::endl;
-            for(auto& reaction : hoge.second.reactions){
-                std::cout << reaction.emoji_name << std::endl;
+    void NotifyTask(dpp::cluster& bot){
+        bot.messages_get(ogm::id::TODO_CHANNEL_ID, 0, 0, 0, 20, [&bot](const dpp::confirmation_callback_t& callback) -> void {
+                std::string tasks = "<@";
+                tasks += ogm::id::OGAME_ID.str();
+                tasks += ">\nタスクが残ってますよ！！！\n\n## タスク一覧\n";
+                for(auto& hoge : callback.get<dpp::message_map>()){
+                    bool not_done = true;
+                    for(auto& reaction : hoge.second.reactions){
+                        if(reaction.emoji_name == "done"){
+                            not_done = false;
+                            break;
+                        }
+                    }
+                    if(not_done){
+                        // tasks.push_back(hoge.second.content);
+                        tasks += "- ";
+                        tasks += hoge.second.content;
+                        tasks += '\n';
+                    }
+                }
+                dpp::message message{ogm::id::NOTIFY_CHANNEL_ID, tasks};
+                bot.message_create(message);
             }
-        }
-        });
+        );
     }
+    
 }
 }
  
 int main() {
     bool flag = true;
-    std::string yesterday = ogm::GetToday();
+    std::string preHour = ogm::datetime::GetHour();
 
     dpp::cluster bot(BOT_TOKEN, dpp::i_default_intents | dpp::i_message_content);
 
@@ -53,9 +62,6 @@ int main() {
     });
 
     bot.on_message_create([&bot](const dpp::message_create_t& event) {
-        /* See if the message contains the phrase we want to check for.
-         * If there's at least a single match, we reply and say it's not allowed.
-         */
         std::cout << "content: " << event.msg.content << std::endl;
         if (event.msg.content.find("hoge") != std::string::npos) {
             event.reply("fuga", true);
@@ -63,7 +69,7 @@ int main() {
         if (event.msg.content.find("bad word") != std::string::npos) {
             event.reply("That is not allowed here. Please, mind your language!", true);
         }
-        if (event.msg.channel_id == channel_id::TODO_CHANNEL_ID and event.msg.content.find("hey") == std::string::npos){
+        if (event.msg.id == ogm::id::TODO_CHANNEL_ID and event.msg.content.find("hey") == std::string::npos){
             event.reply("hey");
         }
     });
@@ -71,18 +77,32 @@ int main() {
     bot.on_slashcommand([](const dpp::slashcommand_t& event) {
         if (event.command.get_command_name() == "ping") {
             event.reply("Pong!");
+        } else if (event.command.get_command_name() == "pong") {
+            event.reply("Ping!");
+        } else if (event.command.get_command_name() == "ding") {
+            event.reply("Dong!");
+        } else if (event.command.get_command_name() == "dong") {
+            event.reply("Ding!");
         }
     });
 
-    
+    std::cout << ogm::datetime::GetHour() << std::endl;
+
+    auto temp = ogm::json::ReadJson("gasoline.json");
+    temp[temp.size()] = 100000;
+    ogm::json::WriteJson("test.json", temp);
 
     bot.start(true);
 
     //終了まで待機 (8)
     while (flag) {
-        auto today = ogm::GetToday();
-        if(yesterday != today){
-
+        auto nowHour = ogm::datetime::GetHour();
+        if(preHour != nowHour){
+            preHour = nowHour;
+            if(nowHour == "00" or nowHour == "08" or nowHour == "20"){
+                std::cout << "日付が変わったよっ！！！！" << std::endl;
+                ogm::bot_move::NotifyTask(bot);
+            }
         }
         sleep(60);
     }
