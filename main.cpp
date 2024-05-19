@@ -165,7 +165,7 @@ int main() {
         value["distance"] = distance;
         std::cout << jsondata.size() << std::endl;
         jsondata[jsondata.size()] = value;
-        ogm::json::WriteJson(path, value);
+        ogm::json::WriteJson(path, jsondata);
 
 
         m.set_content(oss.str());//.set_flags(dpp::m_ephemeral);

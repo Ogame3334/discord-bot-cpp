@@ -11,7 +11,6 @@ namespace ogm::json{
         if(!ifs) {
             std::ofstream ofs;
             ofs.open(path);
-            ofs << "[]";
             ofs.close();
             ifs.open(path);
         }
