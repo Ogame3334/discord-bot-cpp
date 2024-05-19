@@ -2,13 +2,18 @@
 
 #include <string>
 #include <jsoncpp/json/json.h>
+#include <fstream>
 
 namespace ogm::json{
     Json::Value ReadJson(std::string path){
         std::ifstream ifs;
         ifs.open(path);
         if(!ifs) {
-            exit(1);
+            std::ofstream ofs;
+            ofs.open(path);
+            ofs << "[]";
+            ofs.close();
+            ifs.open(path);
         }
 
         std::string jsonStr{std::istreambuf_iterator<char>(ifs), std::istreambuf_iterator<char>()};
@@ -18,10 +23,6 @@ namespace ogm::json{
         Json::Reader reader;
         Json::Value value;
         reader.parse(jsonStr, value);
-
-        for(auto& hoge : value){
-            std::cout << hoge << std::endl;
-        }
 
         return value;
     }

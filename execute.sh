@@ -8,7 +8,7 @@ if [ ! -d $DIR ];then
   mkdir $DIR
 fi
 
-ls
+echo "Asia/Tokyo" > /etc/timezone
 
 cd $DIR
 cmake ..

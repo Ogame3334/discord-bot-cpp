@@ -5,24 +5,23 @@
 
 namespace ogm::datetime
 {
-    std::time_t GetNow(){
-        std::chrono::system_clock::time_point p = std::chrono::system_clock::now();
-        return std::chrono::system_clock::to_time_t(p);
+    std::tm GetTimeJP(){
+        auto now = std::chrono::system_clock::now();
+        std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+        now_time += 9 * 60 * 60;
+        std::tm now_tm = *std::localtime(&now_time);
+        return now_tm;
     }
     std::string GetToday(){
-        auto now = std::chrono::system_clock::now();
-        std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
-        std::tm now_tm = *std::localtime(&now_time_t);
+        auto now_time = GetTimeJP();
         std::ostringstream oss;
-        oss << std::put_time(&now_tm, "%Y-%m-%d");
+        oss << std::put_time(&now_time, "%Y-%m-%d");
         return oss.str();
     }
     std::string GetHour(){
-        auto now = std::chrono::system_clock::now();
-        std::time_t now_time_t = std::chrono::system_clock::to_time_t(now);
-        std::tm now_tm = *std::localtime(&now_time_t);
+        auto now_time = GetTimeJP();
         std::ostringstream oss;
-        oss << std::put_time(&now_tm, "%H");
+        oss << std::put_time(&now_time, "%H");
         return oss.str();
     }
 }

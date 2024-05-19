@@ -18,6 +18,10 @@ namespace id
     const dpp::snowflake NOTIFY_CHANNEL_ID = 1231795852796887050;
     const dpp::snowflake OGAME_ID = 239344934262538240;
 }
+namespace constants
+{
+    const std::string GASOLINE_PATH = "gasoline.json";
+}
 namespace bot_move
 {
     void NotifyTask(dpp::cluster& bot){
@@ -58,39 +62,118 @@ int main() {
     bot.on_log(dpp::utility::cout_logger());
 
     bot.on_ready([&bot](const dpp::ready_t& event) {
-        std::cout << "ログインしました" << std::endl;
+        std::cout << "bot is ready." << std::endl;
+        ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
+        if (dpp::run_once<struct register_bot_commands>()) {
+            bot.global_bulk_command_delete();
+            dpp::slashcommand gasoline("gasoline", "ガソリンの記録", bot.me.id);
+            gasoline.add_option(
+                dpp::command_option(dpp::co_sub_command, "register", "ガソリンと距離を記録します")
+            )
+            .add_option(
+                dpp::command_option(dpp::co_sub_command, "json", "記録のjsonファイルを返します")
+            )
+            .add_option(
+                dpp::command_option(dpp::co_sub_command, "graph", "燃費の折れ線グラフを返します")
+            );
+
+            bot.global_command_create(gasoline);
+        }
     });
 
-    bot.on_message_create([&bot](const dpp::message_create_t& event) {
-        std::cout << "content: " << event.msg.content << std::endl;
-        if (event.msg.content.find("hoge") != std::string::npos) {
-            event.reply("fuga", true);
-        }
-        if (event.msg.content.find("bad word") != std::string::npos) {
-            event.reply("That is not allowed here. Please, mind your language!", true);
-        }
-        if (event.msg.id == ogm::id::TODO_CHANNEL_ID and event.msg.content.find("hey") == std::string::npos){
-            event.reply("hey");
-        }
-    });
+    // bot.on_message_create([&bot](const dpp::message_create_t& event) {
+    //     if (event.msg.content.find("hoge") != std::string::npos) {
+    //         event.reply("fuga", true);
+    //     }
+    //     if (event.msg.content.find("bad word") != std::string::npos) {
+    //         event.reply("That is not allowed here. Please, mind your language!", true);
+    //     }
+    //     if (event.msg.id == ogm::id::TODO_CHANNEL_ID and event.msg.content.find("hey") == std::string::npos){
+    //         event.reply("hey");
+    //     }
+    // });
 
     bot.on_slashcommand([](const dpp::slashcommand_t& event) {
-        if (event.command.get_command_name() == "ping") {
-            event.reply("Pong!");
-        } else if (event.command.get_command_name() == "pong") {
-            event.reply("Ping!");
-        } else if (event.command.get_command_name() == "ding") {
-            event.reply("Dong!");
-        } else if (event.command.get_command_name() == "dong") {
-            event.reply("Ding!");
-        }
+        dpp::command_interaction cmd_data = event.command.get_command_interaction();
+        if (event.command.get_command_name() == "gasoline") {
+            auto subcommand = cmd_data.options[0];
+            if(subcommand.name == "register"){
+                /* Instantiate an interaction_modal_response object */
+                dpp::interaction_modal_response modal("my_modal", "Please enter stuff");
+    
+                /* Add a text component */
+                modal.add_component(
+                    dpp::component()
+                        .set_label("走った距離km")
+                        .set_id("field_id")
+                        .set_type(dpp::cot_text)
+                        .set_placeholder("512.1")
+                        .set_min_length(1)
+                        .set_max_length(20)
+                        .set_text_style(dpp::text_short)
+                );
+    
+                /* Add another text component in the next row, as required by Discord */
+                modal.add_row();
+                modal.add_component(
+                    dpp::component()
+                        .set_label("ガソリンL")
+                        .set_id("field_id2")
+                        .set_type(dpp::cot_text)
+                        .set_placeholder("25.6")
+                        .set_min_length(1)
+                        .set_max_length(20)
+                        .set_text_style(dpp::text_short)
+                );
+    
+                /* Trigger the dialog box. All dialog boxes are ephemeral */
+                event.dialog(modal);
+            }
+            else if(subcommand.name == "json"){
+                dpp::message message;
+                auto jsondata = ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
+                message.add_file(ogm::constants::GASOLINE_PATH, jsondata.toStyledString(), "application/json");
+                event.reply(message);
+            }
+            else if(subcommand.name == "graph"){
+                event.reply("いつかグラフを返すようにするよ！！");
+            }
+        } 
     });
 
-    // std::cout << ogm::datetime::GetHour() << std::endl;
+    bot.on_form_submit([](const dpp::form_submit_t & event) {
+        /* For this simple example, we know the first element of the first row ([0][0]) is value type string.
+         * In the real world, it may not be safe to make such assumptions!
+         */
+        std::string d = std::get<std::string>(event.components[0].components[0].value);
+        std::string g = std::get<std::string>(event.components[1].components[0].value);
+        double distance = std::stod(d);
+        double gasoline = std::stod(g);
+ 
+        dpp::message m;
+        std::ostringstream oss;
+        oss << "走行距離：" << distance << "[km]" << std::endl;
+        oss << "ガソリン：" << gasoline << "[L]" << std::endl;
+        oss << "　　燃費：" << distance / gasoline << "[km/L]" << std::endl;
 
-    // auto temp = ogm::json::ReadJson("gasoline.json");
-    // temp[temp.size()] = 100000;
-    // ogm::json::WriteJson("test.json", temp);
+        std::string path = "gasoline.json";
+
+        auto jsondata = ogm::json::ReadJson(path);
+        Json::Value value;
+        value["date"] = ogm::datetime::GetToday();
+        value["gasoline"] = gasoline;
+        value["distance"] = distance;
+        std::cout << jsondata.size() << std::endl;
+        jsondata[jsondata.size()] = value;
+        ogm::json::WriteJson(path, value);
+
+
+        m.set_content(oss.str());//.set_flags(dpp::m_ephemeral);
+ 
+        /* Emit a reply. Form submission is still an interaction and must generate some form of reply! */
+        event.reply(m);
+    });
+
 
     bot.start(true);
 
@@ -99,7 +182,7 @@ int main() {
         auto nowHour = ogm::datetime::GetHour();
         if(preHour != nowHour){
             preHour = nowHour;
-            if(nowHour == "00" or nowHour == "08" or nowHour == "20"){
+            if(nowHour == "15" or nowHour == "23" or nowHour == "11"){
                 // std::cout << "日付が変わったよっ！！！！" << std::endl;
                 ogm::bot_move::NotifyTask(bot);
             }

@@ -6,3 +6,5 @@ services:
     container_name: ogame-notify-discord
     volumes:
       - .:/root/ogame-notify
+    env_file:
+      - ./.env
