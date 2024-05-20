@@ -1,5 +1,5 @@
 #include <dpp/dpp.h>
-#include "inc/token.hpp"
+// #include "inc/token.hpp"
 #include <unistd.h>
 #include <chrono>
 #include <sstream>
@@ -9,7 +9,7 @@
 #include "inc/jsonutil.hpp"
 #include "inc/datetimeutil.hpp"
 #include "inc/gen_graph.hpp"
-
+#include "inc/read_image.hpp"
 
 namespace ogm
 {
@@ -21,7 +21,11 @@ namespace id
 }
 namespace constants
 {
-    const std::string GASOLINE_PATH = "../gasoline.json";
+    const std::string BOT_TOKEN = getenv("DISCORD_BOT_TOKEN");
+    const std::string GASOLINE_JSON_NAME = "gasoline.json";
+    const std::string GASOLINE_PATH = "../" + GASOLINE_JSON_NAME;
+    const std::string FUEL_EFFICIENCY_IMAGE_NAME = "fuel_efficiency.png";
+    const std::string FUEL_EFFICIENCY_PATH = "../" + FUEL_EFFICIENCY_IMAGE_NAME;
 }
 namespace bot_move
 {
@@ -57,12 +61,12 @@ int main() {
     bool flag = true;
     std::string preHour = ogm::datetime::GetHour();
 
-    dpp::cluster bot(BOT_TOKEN, dpp::i_default_intents | dpp::i_message_content);
+    dpp::cluster bot(ogm::constants::BOT_TOKEN, dpp::i_default_intents | dpp::i_message_content);
 
     bot.on_log(dpp::utility::cout_logger());
 
     bot.on_ready([&bot](const dpp::ready_t& event) {
-        ogm::graph::GenGraph("../hoge.png");
+        ogm::graph::GenGraph(ogm::constants::FUEL_EFFICIENCY_PATH);
         std::cout << "bot is ready." << std::endl;
         ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
         if (dpp::run_once<struct register_bot_commands>()) {
@@ -81,18 +85,6 @@ int main() {
             bot.global_command_create(gasoline);
         }
     });
-
-    // bot.on_message_create([&bot](const dpp::message_create_t& event) {
-    //     if (event.msg.content.find("hoge") != std::string::npos) {
-    //         event.reply("fuga", true);
-    //     }
-    //     if (event.msg.content.find("bad word") != std::string::npos) {
-    //         event.reply("That is not allowed here. Please, mind your language!", true);
-    //     }
-    //     if (event.msg.id == ogm::id::TODO_CHANNEL_ID and event.msg.content.find("hey") == std::string::npos){
-    //         event.reply("hey");
-    //     }
-    // });
 
     bot.on_slashcommand([](const dpp::slashcommand_t& event) {
         dpp::command_interaction cmd_data = event.command.get_command_interaction();
@@ -133,11 +125,15 @@ int main() {
             else if(subcommand.name == "json"){
                 dpp::message message;
                 auto jsondata = ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
-                message.add_file(ogm::constants::GASOLINE_PATH, jsondata.toStyledString(), "application/json");
+                message.add_file(ogm::constants::GASOLINE_JSON_NAME, jsondata.toStyledString(), "application/json");
                 event.reply(message);
             }
             else if(subcommand.name == "graph"){
-                event.reply("いつかグラフを返すようにするよ！！");
+                auto jsondata = ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
+                dpp::message message;
+                auto imageData = ogm::image::readImage(ogm::constants::FUEL_EFFICIENCY_PATH);
+                message.add_file(ogm::constants::FUEL_EFFICIENCY_IMAGE_NAME, imageData, "image/png");
+                event.reply(message);
             }
         } 
     });
