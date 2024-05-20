@@ -5,3 +5,4 @@ gasoline.json
 method_test/
 .vscode/
 fuel_efficiency.png
+*.tar
