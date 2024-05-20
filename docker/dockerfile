@@ -5,10 +5,36 @@ RUN ln -sf /usr/share/zoneinfo/Asia/Tokyo /etc/localtime
 COPY libdpp-10.0.29-linux-x64.deb /libdpp-10.0.29-linux-x64.deb
 
 RUN apt update && apt upgrade -y
-RUN apt install -y \
-    git \
-    cmake \
-    gcc \
-    g++ \
-    ./libdpp-10.0.29-linux-x64.deb \
-    libjsoncpp-dev
+RUN apt install -y git
+RUN apt install -y cmake
+RUN apt install -y gcc
+RUN apt install -y g++
+RUN apt install -y wget
+RUN apt install -y ./libdpp-10.0.29-linux-x64.deb
+RUN apt install -y libjsoncpp-dev 
+#ここからpython
+RUN apt install -y build-essential
+RUN apt install -y libbz2-dev
+RUN apt install -y libdb-dev
+RUN apt install -y libreadline-dev
+RUN apt install -y libffi-dev
+RUN apt install -y libgdbm-dev
+RUN apt install -y liblzma-dev
+RUN apt install -y libncursesw5-dev
+RUN apt install -y libsqlite3-dev
+RUN apt install -y libssl-dev
+RUN apt install -y zlib1g-dev
+RUN apt install -y uuid-dev
+RUN apt install -y python3-pip
+
+RUN wget --no-check-certificate https://www.python.org/ftp/python/3.12.3/Python-3.12.3.tar.xz
+RUN tar -xJf Python-3.12.3.tar.xz
+RUN cd Python-3.12.3 && \
+./configure && \
+make  && \
+make install
+
+RUN pip install numpy
+RUN apt install -y python3-dev
+RUN pip install matplotlib
+RUN apt install -y fonts-ipafont

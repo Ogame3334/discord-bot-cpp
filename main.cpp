@@ -8,6 +8,7 @@
 #include <fstream>
 #include "inc/jsonutil.hpp"
 #include "inc/datetimeutil.hpp"
+#include "inc/gen_graph.hpp"
 
 
 namespace ogm
@@ -20,7 +21,7 @@ namespace id
 }
 namespace constants
 {
-    const std::string GASOLINE_PATH = "gasoline.json";
+    const std::string GASOLINE_PATH = "../gasoline.json";
 }
 namespace bot_move
 {
@@ -49,7 +50,6 @@ namespace bot_move
             }
         );
     }
-    
 }
 }
  
@@ -62,6 +62,7 @@ int main() {
     bot.on_log(dpp::utility::cout_logger());
 
     bot.on_ready([&bot](const dpp::ready_t& event) {
+        ogm::graph::GenGraph("../hoge.png");
         std::cout << "bot is ready." << std::endl;
         ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
         if (dpp::run_once<struct register_bot_commands>()) {
@@ -156,16 +157,14 @@ int main() {
         oss << "ガソリン：" << gasoline << "[L]" << std::endl;
         oss << "　　燃費：" << distance / gasoline << "[km/L]" << std::endl;
 
-        std::string path = "gasoline.json";
-
-        auto jsondata = ogm::json::ReadJson(path);
+        auto jsondata = ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
         Json::Value value;
         value["date"] = ogm::datetime::GetToday();
         value["gasoline"] = gasoline;
         value["distance"] = distance;
         std::cout << jsondata.size() << std::endl;
         jsondata[jsondata.size()] = value;
-        ogm::json::WriteJson(path, jsondata);
+        ogm::json::WriteJson(ogm::constants::GASOLINE_PATH, jsondata);
 
 
         m.set_content(oss.str());//.set_flags(dpp::m_ephemeral);
@@ -182,7 +181,7 @@ int main() {
         auto nowHour = ogm::datetime::GetHour();
         if(preHour != nowHour){
             preHour = nowHour;
-            if(nowHour == "15" or nowHour == "23" or nowHour == "11"){
+            if(nowHour == "00" or nowHour == "08" or nowHour == "20"){
                 // std::cout << "日付が変わったよっ！！！！" << std::endl;
                 ogm::bot_move::NotifyTask(bot);
             }
