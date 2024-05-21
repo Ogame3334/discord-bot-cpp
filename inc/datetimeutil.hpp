@@ -18,6 +18,12 @@ namespace ogm::datetime
         oss << std::put_time(&now_time, "%Y-%m-%d");
         return oss.str();
     }
+    std::string GetMonth(){
+        auto now_time = GetTimeJP();
+        std::ostringstream oss;
+        oss << std::put_time(&now_time, "%m");
+        return oss.str();
+    }
     std::string GetHour(){
         auto now_time = GetTimeJP();
         std::ostringstream oss;

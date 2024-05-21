@@ -10,56 +10,14 @@
 #include "inc/datetimeutil.hpp"
 #include "inc/gen_graph.hpp"
 #include "inc/read_image.hpp"
+#include "inc/constants.hpp"
+#include "inc/bot_move.hpp"
 
-namespace ogm
-{
-namespace id
-{
-    const dpp::snowflake TODO_CHANNEL_ID = 1227881613787140097;
-    const dpp::snowflake NOTIFY_CHANNEL_ID = 1231795852796887050;
-    const dpp::snowflake OGAME_ID = 239344934262538240;
-}
-namespace constants
-{
-    const std::string BOT_TOKEN = getenv("DISCORD_BOT_TOKEN");
-    const std::string GASOLINE_JSON_NAME = "gasoline.json";
-    const std::string GASOLINE_PATH = "../" + GASOLINE_JSON_NAME;
-    const std::string FUEL_EFFICIENCY_IMAGE_NAME = "fuel_efficiency.png";
-    const std::string FUEL_EFFICIENCY_PATH = "../" + FUEL_EFFICIENCY_IMAGE_NAME;
-}
-namespace bot_move
-{
-    void NotifyTask(dpp::cluster& bot){
-        bot.messages_get(ogm::id::TODO_CHANNEL_ID, 0, 0, 0, 20, [&bot](const dpp::confirmation_callback_t& callback) -> void {
-                std::string tasks = "<@";
-                tasks += ogm::id::OGAME_ID.str();
-                tasks += ">\nタスクが残ってますよ！！！\n\n## タスク一覧\n";
-                for(auto& hoge : callback.get<dpp::message_map>()){
-                    bool not_done = true;
-                    for(auto& reaction : hoge.second.reactions){
-                        if(reaction.emoji_name == "done"){
-                            not_done = false;
-                            break;
-                        }
-                    }
-                    if(not_done){
-                        // tasks.push_back(hoge.second.content);
-                        tasks += "- ";
-                        tasks += hoge.second.content;
-                        tasks += '\n';
-                    }
-                }
-                dpp::message message{ogm::id::NOTIFY_CHANNEL_ID, tasks};
-                bot.message_create(message);
-            }
-        );
-    }
-}
-}
  
 int main() {
     bool flag = true;
     std::string preHour = ogm::datetime::GetHour();
+    std::string preMonth = ogm::datetime::GetMonth();
 
     dpp::cluster bot(ogm::constants::BOT_TOKEN, dpp::i_default_intents | dpp::i_message_content);
 
@@ -91,6 +49,7 @@ int main() {
         if (event.command.get_command_name() == "gasoline") {
             auto subcommand = cmd_data.options[0];
             if(subcommand.name == "register"){
+                
                 /* Instantiate an interaction_modal_response object */
                 dpp::interaction_modal_response modal("my_modal", "Please enter stuff");
     
@@ -129,7 +88,7 @@ int main() {
                 event.reply(message);
             }
             else if(subcommand.name == "graph"){
-                auto jsondata = ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
+                ogm::graph::GenGraph(ogm::constants::FUEL_EFFICIENCY_PATH);
                 dpp::message message;
                 auto imageData = ogm::image::readImage(ogm::constants::FUEL_EFFICIENCY_PATH);
                 message.add_file(ogm::constants::FUEL_EFFICIENCY_IMAGE_NAME, imageData, "image/png");
@@ -169,7 +128,6 @@ int main() {
         event.reply(m);
     });
 
-
     bot.start(true);
 
     //終了まで待機 (8)
@@ -178,6 +136,17 @@ int main() {
         if(preHour != nowHour){
             preHour = nowHour;
             if(nowHour == "00" or nowHour == "08" or nowHour == "20"){
+                if(nowHour == "00"){
+                    auto nowMonth = ogm::datetime::GetMonth();
+                    if(preMonth != nowMonth){
+                        preMonth = nowMonth;
+                        dpp::message message{};
+                        message.set_channel_id(ogm::constants::id::GASOLINE_BACKUP_CHANNEL_ID);
+                        auto jsondata = ogm::json::ReadJson(ogm::constants::GASOLINE_PATH);
+                        message.add_file(ogm::constants::GASOLINE_JSON_NAME, jsondata.toStyledString(), "application/json");
+                        bot.message_create(message);
+                    }
+                }
                 // std::cout << "日付が変わったよっ！！！！" << std::endl;
                 ogm::bot_move::NotifyTask(bot);
             }
